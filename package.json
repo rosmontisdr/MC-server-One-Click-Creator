@@ -1,0 +1,16 @@
+{
+  "name": "mcsp",
+  "version": "1.0.0",
+  "private": true,
+  "description": "把 Minecraft 客户端整合包做成服务端包，联网剔除只在客户端生效的模组。零依赖，仅用 Node.js 标准库。",
+  "main": "index.js",
+  "bin": {
+    "mcsp": "mcsp.js"
+  },
+  "scripts": {
+    "test": "node test/selftest.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}
