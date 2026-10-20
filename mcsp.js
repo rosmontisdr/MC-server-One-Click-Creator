@@ -14,17 +14,21 @@ const USAGE = `mcsp — 把 Minecraft 客户端整合包做成服务端包
   node mcsp.js plan <输入> [选项]                 只体检并打印方案，不写任何文件
   node mcsp.js identify <输入>                    只看这是哪种整合包，不读模组
 
-输入可以是：已解压的客户端实例目录、客户端实例 zip、Modrinth .mrpack、CurseForge 整合包 zip。
+输入可以是：已解压的客户端实例目录、客户端实例 zip、Modrinth .mrpack、CurseForge 整合包 zip、
+MCBBS 整合包（mcbbs.packmeta）、HMCL 整合包（modpack.json，含 .hmdp）、MultiMC/Prism 导出包
+（mmc-pack.json + instance.cfg）、HMCL 服务端整合包（server-manifest.json）。扩展名不参与识别。
 
 选项
   -o, --out <目录>        输出目录，默认 <输入名>-server
       --force             输出目录非空时覆盖同名文件
-      --offline           不联网：只用 jar 元数据与内置名单判定
+      --offline           不联网：只用 jar 元数据与内置名单判定，并关闭服务端文件取回
       --no-mcmod          不做 MC百科「运行环境」复核（默认做：把百科标为服务端需装/可选的模组挪回服务端）
       --mcmod-delay <毫秒> 百科查询间隔，默认 600；站点慢就调大，别调小
       --mcmod-limit <个数> 单次最多复核多少个模组，默认 200
-      --no-download       不下载 .mrpack 清单里声明的文件
-      --fetch             顺带下载加载器服务端文件（Fabric/Quilt 直接可用，Forge/NeoForge 只下安装器）
+      --no-download       不下载清单里声明的文件（.mrpack / MCBBS / HMCL 服务端包）
+      --fetch             取回并安装服务端文件（默认开启）
+      --no-fetch          不取回服务端文件：只写模组与配置，产物需要自行补齐加载器
+                          默认会下载官方安装器并执行它，把原版服务端、libraries/ 与启动 jar 一并装好
       --keep <模式>       强制保留，可重复；含 * 按通配，否则按子串
       --drop <模式>       强制剔除，可重复；写法同上
       --drop-optional     连「服务端可选」的模组一并剔除（如 JEI、苹果皮），默认保留
@@ -51,7 +55,7 @@ const PHASE_LABEL = {
   mcmod: '复核 MC百科',
   netgate: '扫网络通道',
   write: '写出文件',
-  fetch: '取回加载器',
+  fetch: '下载并安装服务端',
 };
 
 function usageError(msg) {
@@ -86,12 +90,13 @@ function parseArgs(argv) {
       case '-o': case '--out': o.out = value(a); break;
       case '--force': o.force = true; break;
       case '--conservative': o.conservative = true; break;
-      case '--offline': case '--no-online': o.online = false; o.mcmod = false; break;
+      case '--offline': case '--no-online': o.online = false; o.mcmod = false; o.offline = true; break;
       case '--no-mcmod': o.mcmod = false; break;
       case '--mcmod-delay': o.mcmodDelay = Number(value(a)); break;
       case '--mcmod-limit': o.mcmodLimit = Number(value(a)); break;
       case '--no-download': o.download = false; break;
       case '--fetch': o.fetch = true; break;
+      case '--no-fetch': o.fetch = false; break;
       case '--keep': o.keep.push(value(a)); break;
       case '--drop': o.drop.push(value(a)); break;
       case '--drop-optional': o.dropOptional = true; break;
@@ -108,6 +113,9 @@ function parseArgs(argv) {
         rest.push(a);
     }
   }
+  // 默认取回服务端文件；--offline 明确要求不联网时优先级最高
+  if (o.fetch === undefined) o.fetch = true;
+  if (o.offline) o.fetch = false;
   return { o, rest };
 }
 
@@ -197,7 +205,7 @@ function summary(plan, out) {
 
 function defaultOut(input) {
   const abs = path.resolve(input);
-  const base = path.basename(abs).replace(/\.(zip|mrpack)$/i, '');
+  const base = path.basename(abs).replace(/\.(zip|mrpack|hmdp|mcpack|gdlpack)$/i, '');
   return path.join(path.dirname(abs), `${base}-server`);
 }
 

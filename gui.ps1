@@ -319,7 +319,7 @@ $xaml = @'
         <Border Style="{StaticResource Card}">
           <StackPanel>
             <TextBlock Text="整合包" Style="{StaticResource CardTitle}"/>
-            <TextBlock Text="客户端实例目录、客户端整合包 zip、Modrinth .mrpack 都可以。"
+            <TextBlock Text="客户端实例目录、整合包 zip、Modrinth .mrpack、MCBBS/HMCL/MMC 导出包都可以。"
                        Style="{StaticResource Ink3}" Margin="0,3,0,12"/>
 
             <Grid Margin="0,0,0,12">
@@ -329,14 +329,14 @@ $xaml = @'
               <StackPanel Margin="18,22,18,22" HorizontalAlignment="Center" VerticalAlignment="Center">
                 <TextBlock x:Name="DropTitle" Text="把整合包拖到这里" FontSize="13.5" FontWeight="SemiBold"
                            HorizontalAlignment="Center" Foreground="#c3c2b7"/>
-                <TextBlock x:Name="DropSub" Text="文件夹或 zip 都行"
+                <TextBlock x:Name="DropSub" Text="文件夹或整合包文件都行"
                            Style="{StaticResource Ink3}" HorizontalAlignment="Center" Margin="0,4,0,0"/>
               </StackPanel>
             </Grid>
 
             <StackPanel Orientation="Horizontal" Margin="0,0,0,12">
               <Button x:Name="PickDirBtn" Content="选择文件夹" Style="{StaticResource Btn}"/>
-              <Button x:Name="PickZipBtn" Content="选择 zip / mrpack" Style="{StaticResource Btn}" Margin="8,0,0,0"/>
+              <Button x:Name="PickZipBtn" Content="选择整合包文件" Style="{StaticResource Btn}" Margin="8,0,0,0"/>
               <Button x:Name="ClearBtn" Content="清空" Style="{StaticResource BtnGhost}" Margin="8,0,0,0"/>
             </StackPanel>
 
@@ -591,8 +591,8 @@ function Set-Input([string]$path) {
         'mcsp', 'YesNo', 'Warning')
       if ($answer -ne 'Yes') { return }
     }
-  } elseif ($item.Extension.ToLower() -notin @('.zip', '.mrpack')) {
-    [System.Windows.Forms.MessageBox]::Show('请选择文件夹，或 .zip / .mrpack 文件。', 'mcsp') | Out-Null
+  } elseif ($item.Extension.ToLower() -notin @('.zip', '.mrpack', '.hmdp', '.mcpack', '.gdlpack')) {
+    [System.Windows.Forms.MessageBox]::Show('请选择文件夹，或 .zip / .mrpack / .hmdp / .mcpack 整合包文件。', 'mcsp') | Out-Null
     return
   }
 
@@ -636,7 +636,7 @@ $win.FindName('PickDirBtn').Add_Click({
 $win.FindName('PickZipBtn').Add_Click({
   $dlg = New-Object System.Windows.Forms.OpenFileDialog
   $dlg.Title = '选择整合包压缩包'
-  $dlg.Filter = '整合包 (*.zip;*.mrpack)|*.zip;*.mrpack|所有文件 (*.*)|*.*'
+  $dlg.Filter = '整合包 (*.zip;*.mrpack;*.hmdp;*.mcpack)|*.zip;*.mrpack;*.hmdp;*.mcpack|所有文件 (*.*)|*.*'
   if ($Script:LastInput -and (Test-Path -LiteralPath $Script:LastInput)) {
     $dlg.InitialDirectory = [IO.Path]::GetDirectoryName($Script:LastInput)
   }

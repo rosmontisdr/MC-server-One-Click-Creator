@@ -105,7 +105,9 @@ async function build(input, out, opts = {}) {
       tool: TOOL,
       onEvent: opts.onEvent,
       download: opts.download,
-      fetch: opts.fetch ? (dir, p) => fetchLoader(dir, p, { ua: userAgent(opts) }) : null,
+      // 默认取回并安装服务端文件：没有它们，产物一启动就报缺文件。
+      // 宿主不想联网时显式传 fetch: false；plan() 永远不联网取文件。
+      fetch: opts.fetch === false ? null : (dir, p) => fetchLoader(dir, p, { ua: userAgent(opts) }),
       downloadTimeout: opts.downloadTimeout,
     });
     if (opts.onEvent) opts.onEvent({ t: 'done', out: report.out, counts: report.counts, report: report.report });
@@ -274,7 +276,9 @@ function splitFiles(pack, mods) {
   }
   for (const m of pack.manifest) {
     if (!m.path || all.has(m.path)) continue; // 包里已有实体，不必再下
-    all.set(m.path, { rel: m.path, size: m.size, origin: 'download', url: m.url, sha512: m.sha512 });
+    all.set(m.path, {
+      rel: m.path, size: m.size, origin: 'download', url: m.url, sha512: m.sha512, sha1: m.sha1,
+    });
   }
 
   const write = [];
